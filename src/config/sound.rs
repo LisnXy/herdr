@@ -120,7 +120,7 @@ impl AgentSoundOverrides {
         match agent {
             Some(Agent::Pi) => self.pi,
             Some(Agent::Claude) => self.claude,
-            Some(Agent::Codex) => self.codex,
+            Some(Agent::Codex | Agent::Traex) => self.codex,
             Some(Agent::Gemini) => self.gemini,
             Some(Agent::Cursor) => self.cursor,
             Some(Agent::Devin) => self.devin,

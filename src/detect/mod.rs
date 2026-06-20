@@ -44,6 +44,7 @@ pub enum Agent {
     Pi,
     Claude,
     Codex,
+    Traex,
     Gemini,
     Cursor,
     Devin,
@@ -63,10 +64,11 @@ pub enum Agent {
 }
 
 impl Agent {
-    pub const SCREEN_MANIFEST_AGENTS: [Self; 18] = [
+    pub const SCREEN_MANIFEST_AGENTS: [Self; 19] = [
         Self::Pi,
         Self::Claude,
         Self::Codex,
+        Self::Traex,
         Self::Gemini,
         Self::Cursor,
         Self::Devin,
@@ -90,6 +92,7 @@ pub fn agent_label(agent: Agent) -> &'static str {
         Agent::Pi => "pi",
         Agent::Claude => "claude",
         Agent::Codex => "codex",
+        Agent::Traex => "traex",
         Agent::Gemini => "gemini",
         Agent::Cursor => "cursor",
         Agent::Devin => "devin",
@@ -115,6 +118,7 @@ pub fn parse_agent_label(agent: &str) -> Option<Agent> {
         "pi" => Some(Agent::Pi),
         "claude" | "claude-code" => Some(Agent::Claude),
         "codex" => Some(Agent::Codex),
+        "ta" | "traex" => Some(Agent::Traex),
         "gemini" => Some(Agent::Gemini),
         "cursor" | "cursor-agent" => Some(Agent::Cursor),
         "devin" | "devin-cli" | "devin cli" => Some(Agent::Devin),
@@ -144,6 +148,7 @@ pub fn identify_agent(process_name: &str) -> Option<Agent> {
         "pi" => Some(Agent::Pi),
         "claude" | "claude-code" => Some(Agent::Claude),
         "codex" => Some(Agent::Codex),
+        "ta" | "traex" => Some(Agent::Traex),
         "gemini" => Some(Agent::Gemini),
         "cursor" | "cursor-agent" => Some(Agent::Cursor),
         "devin" | "devin-cli" | "devin cli" => Some(Agent::Devin),
@@ -588,6 +593,8 @@ mod tests {
         assert_eq!(identify_agent("claude"), Some(Agent::Claude));
         assert_eq!(identify_agent("claude-code"), Some(Agent::Claude));
         assert_eq!(identify_agent("codex"), Some(Agent::Codex));
+        assert_eq!(identify_agent("ta"), Some(Agent::Traex));
+        assert_eq!(identify_agent("traex"), Some(Agent::Traex));
         assert_eq!(identify_agent("gemini"), Some(Agent::Gemini));
         assert_eq!(identify_agent("cursor"), Some(Agent::Cursor));
         assert_eq!(identify_agent("cursor-agent"), Some(Agent::Cursor));
@@ -617,6 +624,8 @@ mod tests {
     fn parse_known_agent_labels() {
         assert_eq!(parse_agent_label("pi"), Some(Agent::Pi));
         assert_eq!(parse_agent_label("claude"), Some(Agent::Claude));
+        assert_eq!(parse_agent_label("ta"), Some(Agent::Traex));
+        assert_eq!(parse_agent_label("traex"), Some(Agent::Traex));
         assert_eq!(parse_agent_label("cursor-agent"), Some(Agent::Cursor));
         assert_eq!(parse_agent_label("devin-cli"), Some(Agent::Devin));
         assert_eq!(parse_agent_label("agy"), Some(Agent::Antigravity));
@@ -641,6 +650,7 @@ mod tests {
         assert_eq!(agent_label(Agent::Pi), "pi");
         assert_eq!(agent_label(Agent::GithubCopilot), "copilot");
         assert_eq!(agent_label(Agent::OpenCode), "opencode");
+        assert_eq!(agent_label(Agent::Traex), "traex");
         assert_eq!(agent_label(Agent::Devin), "devin");
         assert_eq!(agent_label(Agent::Antigravity), "agy");
         assert_eq!(agent_label(Agent::Omp), "omp");
@@ -679,6 +689,22 @@ mod tests {
         assert_eq!(
             identify_agent_in_job(&job),
             Some((Agent::Codex, "codex".to_string()))
+        );
+    }
+
+    #[test]
+    fn identify_agent_in_job_detects_wrapped_traex() {
+        let job = crate::platform::ForegroundJob {
+            process_group_id: 123,
+            processes: vec![
+                foreground_process(1, "node", &["node", "/path/to/bin/traex"]),
+                foreground_process(2, "bash", &["bash"]),
+            ],
+        };
+
+        assert_eq!(
+            identify_agent_in_job(&job),
+            Some((Agent::Traex, "traex".to_string()))
         );
     }
 
