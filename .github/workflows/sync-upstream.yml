@@ -1,0 +1,51 @@
+name: Sync upstream
+
+on:
+  schedule:
+    - cron: "0 19 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout fork
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Sync branches
+        env:
+          BRANCHES: "master develop"
+          UPSTREAM_REPO: "https://github.com/ogulcancelik/herdr.git"
+        run: |
+          set -euo pipefail
+
+          git remote add upstream "$UPSTREAM_REPO"
+          git fetch origin --prune
+          git fetch upstream --prune
+
+          for branch in $BRANCHES; do
+            if ! git show-ref --verify --quiet "refs/remotes/upstream/$branch"; then
+              echo "Skipping $branch: upstream branch does not exist"
+              continue
+            fi
+
+            if git show-ref --verify --quiet "refs/remotes/origin/$branch"; then
+              git checkout -B "$branch" "origin/$branch"
+              git merge --no-edit "upstream/$branch"
+            else
+              git checkout -B "$branch" "upstream/$branch"
+            fi
+
+            git push origin "$branch"
+          done
