@@ -41,8 +41,15 @@ jobs:
             fi
 
             if git show-ref --verify --quiet "refs/remotes/origin/$branch"; then
+              before_ref="origin/$branch"
               git checkout -B "$branch" "origin/$branch"
-              git merge --no-edit "upstream/$branch"
+              git merge --no-ff --no-commit "upstream/$branch"
+              if git cat-file -e "$before_ref:.github/workflows" 2>/dev/null; then
+                git restore --source="$before_ref" --staged --worktree -- .github/workflows
+              fi
+              if git rev-parse -q --verify MERGE_HEAD >/dev/null; then
+                git commit --allow-empty -m "Sync $branch with upstream/$branch"
+              fi
             else
               git checkout -B "$branch" "upstream/$branch"
             fi
